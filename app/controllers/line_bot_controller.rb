@@ -11,15 +11,21 @@ class LineBotController < ApplicationController
       when Line::Bot::Event::Message
         case event.type
         when Line::Bot::Event::MessageType::Text
-          if event.message["text"] == "出勤"
-            # uri = URI('https://qiita-api.vercel.app/api/trend')
-            # res = Net::HTTP.get_response(uri)
-            # puts res.body if res.is_a?(Net::HTTPSuccess)
-              message = {
-                type: "text",
-                text: text
-              }
-              client.reply_message(event['replyToken'], [{type: "text", text: "第一のメッセージ"}, {type: "text", text: '第二のメッセージ'}])
+          # ユーザーからのメッセージが「出勤なう」だった場合のみにメッセージを返す
+          if event.message["text"] == "出勤なう"
+            uri = URI('https://qiita-api.vercel.app/api/trend')
+            response = Net::HTTP.get_response(uri)
+            response = JSON.parse(response.body)
+            # LINEへ返すレスポンス
+            message = []
+            # トレンド上位5記事のみ抽出
+            5.times {|i|
+              hash = {}
+              hash[:type] = "text"
+              hash[:text] = response[i]["node"]["linkUrl"]
+              message.push(hash)
+            }
+            client.reply_message(event['replyToken'],  message)
           end
         end
       end
